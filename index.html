@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Tracker — Bianca Su</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F7F5F0; --surface: #FFFFFF; --surface2: #F0EDE6;
+  --border: #E0DAD0; --border2: #CBC4B8;
+  --text: #1A1714; --text2: #6B6560; --text3: #9C9590;
+  --accent: #2B4B3C; --accent-l: #E8F0EB;
+  --red: #C0392B; --red-l: #FDECEA;
+  --amber: #A0622A; --amber-l: #FBF0E6;
+  --blue-l: #EEF2FB; --blue: #3B52A0;
+  --mono: 'DM Mono', monospace;
+  --serif: 'Instrument Serif', serif;
+  --sans: 'DM Sans', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
+.shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+.sidebar { background: var(--surface); border-right: 1px solid var(--border); padding: 24px 0; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.main { padding: 32px 40px; max-width: 900px; }
+.logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+.logo-name { font-family: var(--serif); font-size: 18px; }
+.logo-sub { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 2px; letter-spacing: .05em; }
+.nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 20px; font-size: 13px; color: var(--text2); cursor: pointer; border-left: 2px solid transparent; transition: all .15s; }
+.nav-item:hover { background: var(--surface2); color: var(--text); }
+.nav-item.on { color: var(--accent); font-weight: 500; border-left-color: var(--accent); background: var(--accent-l); }
+.nav-icon { width: 16px; height: 16px; opacity: .6; flex-shrink: 0; }
+.nav-item.on .nav-icon { opacity: 1; }
+.api-box { margin-top: auto; padding: 16px 20px; border-top: 1px solid var(--border); }
+.api-lbl { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; color: var(--text3); margin-bottom: 6px; text-transform: uppercase; }
+.api-inp { width: 100%; font-family: var(--mono); font-size: 11px; padding: 6px 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; color: var(--text2); outline: none; }
+.api-inp:focus { border-color: var(--accent); }
+.api-st { font-size: 11px; margin-top: 4px; }
+.api-st.ok { color: var(--accent); }
+.api-st.bad { color: var(--red); }
+.page { display: none; }
+.page.on { display: block; }
+.page-title { font-family: var(--serif); font-size: 26px; margin-bottom: 4px; }
+.page-sub { font-size: 13px; color: var(--text2); margin-bottom: 28px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+.card-title { font-size: 12px; font-family: var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--text3); margin-bottom: 14px; }
+label { display: block; font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 4px; }
+input[type=text], input[type=date], input[type=password], select, textarea {
+  width: 100%; padding: 8px 10px; font-family: var(--sans); font-size: 13px; color: var(--text);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px; outline: none; transition: border .15s;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+textarea { resize: vertical; min-height: 80px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.form-g { margin-bottom: 12px; }
+select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236B6560'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; font-family: var(--sans); font-size: 13px; font-weight: 500; border-radius: 6px; cursor: pointer; transition: all .15s; border: 1px solid var(--border); background: var(--surface); color: var(--text2); }
+.btn:hover { background: var(--surface2); border-color: var(--border2); color: var(--text); }
+.btn-p { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-p:hover { background: #1e3829; }
+.btn-p:disabled, .btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-danger { color: var(--red); }
+.btn-danger:hover { background: var(--red-l); border-color: var(--red); }
+.drop-zone { border: 1.5px dashed var(--border2); border-radius: 8px; padding: 20px; text-align: center; position: relative; cursor: pointer; transition: all .2s; }
+.drop-zone:hover, .drop-zone.drag { border-color: var(--accent); background: var(--accent-l); }
+.drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.drop-title { font-size: 13px; font-weight: 500; margin-bottom: 3px; }
+.drop-sub { font-size: 12px; color: var(--text3); }
+.or-row { display: flex; align-items: center; gap: 10px; margin: 14px 0; }
+.or-row::before, .or-row::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.or-txt { font-size: 11px; font-family: var(--mono); color: var(--text3); white-space: nowrap; }
+.file-badge { display: none; align-items: center; gap: 8px; padding: 7px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; font-size: 12px; font-family: var(--mono); color: var(--text2); margin-top: 10px; }
+.file-badge.on { display: flex; }
+.notice { font-size: 12px; padding: 8px 12px; border-radius: 6px; margin-top: 10px; display: none; }
+.notice.on { display: block; }
+.notice.ok { background: var(--accent-l); color: var(--accent); }
+.notice.err { background: var(--red-l); color: var(--red); }
+.notice.info { background: var(--blue-l); color: var(--blue); }
+.spin { display: none; align-items: center; gap: 8px; padding: 10px 0; font-size: 12px; font-family: var(--mono); color: var(--text3); letter-spacing: .04em; margin-top: 6px; }
+.spin.on { display: flex; }
+.dots { display: flex; gap: 4px; }
+.dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: dp 1.2s infinite; }
+.dot:nth-child(2) { animation-delay: .2s; }
+.dot:nth-child(3) { animation-delay: .4s; }
+@keyframes dp { 0%,80%,100% { opacity:.15 } 40% { opacity:1 } }
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--text3); text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; background: var(--surface2); }
+td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--bg); }
+td select { width: auto; padding: 4px 22px 4px 7px; font-size: 12px; margin: 0; }
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+.stat { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+.stat-n { font-family: var(--serif); font-size: 28px; line-height: 1; }
+.stat-l { font-family: var(--mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--text3); margin-top: 4px; }
+.out-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 16px; }
+.out-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.out-title { font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--text3); }
+.out-body { font-size: 14px; line-height: 1.85; color: var(--text); white-space: pre-wrap; }
+.amber-box { background: var(--amber-l); border: 1px solid #D4956A; border-radius: 8px; padding: 14px 16px; font-size: 13px; color: var(--amber); margin-bottom: 16px; line-height: 1.6; }
+@media (max-width: 700px) {
+  .shell { grid-template-columns: 1fr; }
+  .sidebar { position: static; height: auto; }
+  .main { padding: 16px; }
+  .form-row { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-name">Bianca Su</div>
+      <div class="logo-sub">CPA · Job Tracker</div>
+    </div>
+    <div class="nav-item on" onclick="go('tracker',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="2" width="14" height="12" rx="2"/><line x1="1" y1="6" x2="15" y2="6"/><line x1="5" y1="2" x2="5" y2="6"/><line x1="11" y1="2" x2="11" y2="6"/></svg>
+      Job tracker
+    </div>
+    <div class="nav-item" onclick="go('cover',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="1" width="12" height="14" rx="1.5"/><line x1="5" y1="5" x2="11" y2="5"/><line x1="5" y1="8" x2="11" y2="8"/><line x1="5" y1="11" x2="8" y2="11"/></svg>
+      Cover letter
+    </div>
+    <div class="nav-item" onclick="go('prep',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><line x1="8" y1="5" x2="8" y2="8.5"/><circle cx="8" cy="11" r=".6" fill="currentColor" stroke="none"/></svg>
+      Interview prep
+    </div>
+    <div class="nav-item" onclick="go('resume',this)">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="1" width="12" height="14" rx="1.5"/><line x1="5" y1="4" x2="11" y2="4"/><line x1="5" y1="7" x2="11" y2="7"/><line x1="5" y1="10" x2="9" y2="10"/><circle cx="11.5" cy="11.5" r="2.5"/><line x1="13.5" y1="13.5" x2="15" y2="15"/></svg>
+      Resume summary
+    </div>
+    <div class="api-box">
+      <div class="api-lbl">OpenAI API Key</div>
+      <input type="password" class="api-inp" id="api-key" placeholder="sk-..." oninput="saveKey()" autocomplete="off">
+      <div class="api-st" id="api-st">Enter your key to enable AI</div>
+    </div>
+  </aside>
+
+  <main class="main">
+
+    <!-- TRACKER -->
+    <div id="page-tracker" class="page on">
+      <div class="page-title">Job tracker</div>
+      <div class="page-sub">Paste a URL or upload a PDF/image to auto-import a role.</div>
+
+      <div class="card">
+        <div class="card-title">Import a role</div>
+
+        <div class="form-g">
+          <label>Job posting URL <span style="font-weight:400;color:var(--text3)">— works for Greenhouse, Lever, most company sites. Big 4 / LinkedIn block proxies, use PDF for those.</span></label>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="import-url" placeholder="https://boards.greenhouse.io/... or any public job URL" style="margin:0">
+            <button class="btn btn-p" id="url-btn" onclick="importURL()" style="white-space:nowrap">Fetch &amp; import</button>
+          </div>
+        </div>
+
+        <div class="or-row"><span class="or-txt">or upload PDF / image</span></div>
+
+        <div class="drop-zone" id="drop-zone"
+          ondragover="event.preventDefault();this.classList.add('drag')"
+          ondragleave="this.classList.remove('drag')"
+          ondrop="onDrop(event)">
+          <input type="file" id="file-inp" accept=".pdf,.png,.jpg,.jpeg,.txt" onchange="onFileChange(event)">
+          <div class="drop-title">Drop file here or click to browse</div>
+          <div class="drop-sub">PDF (recommended) · image screenshot · TXT — AI extracts job title, company & description</div>
+        </div>
+
+        <div class="file-badge" id="file-badge">
+          <span id="file-name" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+          <button class="btn btn-sm btn-danger" onclick="clearFile()">Remove</button>
+        </div>
+        <div class="notice" id="import-notice"></div>
+        <div class="spin" id="import-spin">
+          <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+          <span id="spin-msg">Processing...</span>
+        </div>
+      </div>
+
+      <!-- Manual add -->
+      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:flex-end">
+        <div style="flex:1;min-width:140px"><label>Company</label><input type="text" id="m-co" placeholder="Company name"></div>
+        <div style="flex:1;min-width:140px"><label>Role</label><input type="text" id="m-role" placeholder="Job title"></div>
+        <div style="width:130px"><label>Status</label><select id="m-status">
+          <option>Interested</option><option>Applied</option><option>Phone screen</option><option>Interview</option><option>Offer</option><option>Rejected</option>
+        </select></div>
+        <div style="width:130px"><label>Date</label><input type="date" id="m-date"></div>
+        <div style="padding-bottom:1px"><button class="btn btn-p" onclick="addManual()">+ Add manually</button></div>
+      </div>
+
+      <div id="stats-row" class="stats-row" style="display:none"></div>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Company</th><th>Role</th><th>Status</th><th>Date</th><th>JD</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="t-body">
+            <tr><td colspan="6" style="text-align:center;color:var(--text3);padding:2rem;font-family:var(--mono);font-size:12px">No roles yet — import or add one above</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- COVER LETTER -->
+    <div id="page-cover" class="page">
+      <div class="page-title">Cover letter</div>
+      <div class="page-sub">Generated from your background. Select a tracked role or enter manually.</div>
+      <div class="card">
+        <div class="form-g"><label>Select from tracker</label><select id="cl-pick" onchange="prefill('cl')"><option value="">— select or fill in below —</option></select></div>
+        <div class="form-row">
+          <div class="form-g"><label>Company</label><input type="text" id="cl-co" placeholder="Company name"></div>
+          <div class="form-g"><label>Role</label><input type="text" id="cl-role" placeholder="Job title"></div>
+        </div>
+        <div class="form-g">
+          <label>Job description <span style="font-weight:400;color:var(--text3)">(auto-filled from tracker, or paste)</span></label>
+          <textarea id="cl-jd" rows="5" placeholder="Paste job description here for best results..."></textarea>
+        </div>
+        <div class="form-g"><label>Emphasis</label><select id="cl-tone">
+          <option>Lead with AI automation and operational impact</option>
+          <option>Emphasize audit background and technical rigor (KPMG, SOX, PCAOB)</option>
+          <option>Focus on strategic finance leadership and cross-functional influence</option>
+          <option>Highlight fintech / SaaS metrics expertise and scale</option>
+        </select></div>
+        <div class="btn-row">
+          <button class="btn btn-p" id="cl-btn" onclick="genCL()">Generate cover letter</button>
+        </div>
+        <div class="spin" id="cl-spin"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><span>Writing your cover letter...</span></div>
+      </div>
+      <div id="cl-out"></div>
+    </div>
+
+    <!-- INTERVIEW PREP -->
+    <div id="page-prep" class="page">
+      <div class="page-title">Interview prep</div>
+      <div class="page-sub">STAR stories, technical questions, negotiation scripts — all from your real background.</div>
+      <div class="card">
+        <div class="form-g"><label>Select from tracker</label><select id="pr-pick" onchange="prefill('pr')"><option value="">— select or fill in below —</option></select></div>
+        <div class="form-row">
+          <div class="form-g"><label>Company</label><input type="text" id="pr-co" placeholder="Company name"></div>
+          <div class="form-g"><label>Role</label><input type="text" id="pr-role" placeholder="Job title"></div>
+        </div>
+        <div class="form-g"><label>Prep type</label><select id="pr-type">
+          <option>STAR behavioral stories — leadership and decision-making</option>
+          <option>STAR behavioral stories — managing ambiguity and change</option>
+          <option>Technical questions — US GAAP, consolidation, close process</option>
+          <option>Technical questions — SaaS metrics (ARR, CAC, churn, NRR)</option>
+          <option>Technical questions — AI in finance, automation, data tools</option>
+          <option>Advisory / strategic questions — FP&A, business partnering</option>
+          <option>Salary negotiation script</option>
+          <option>Questions to ask the interviewer</option>
+        </select></div>
+        <div class="btn-row">
+          <button class="btn btn-p" id="pr-btn" onclick="genPrep()">Generate prep</button>
+        </div>
+        <div class="spin" id="pr-spin"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><span>Building prep materials...</span></div>
+      </div>
+      <div id="pr-out"></div>
+    </div>
+
+    <!-- RESUME SUMMARY -->
+    <div id="page-resume" class="page">
+      <div class="page-title">Resume summary</div>
+      <div class="page-sub">Upload your base resume once. Generate a tailored summary for each role you apply to.</div>
+
+      <!-- Upload base resume -->
+      <div class="card">
+        <div class="card-title">Your base resume</div>
+        <div id="resume-stored-badge" style="display:none;margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--accent-l);border-radius:6px;font-size:13px;color:var(--accent)">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 5L6.5 11.5 3 8"/></svg>
+            <span id="resume-stored-name">Resume loaded</span>
+            <button class="btn btn-sm" onclick="clearResume()" style="margin-left:auto;color:var(--red)">Remove</button>
+          </div>
+        </div>
+        <div id="resume-drop-area">
+          <div class="drop-zone" id="resume-drop-zone"
+            ondragover="event.preventDefault();this.classList.add('drag')"
+            ondragleave="this.classList.remove('drag')"
+            ondrop="onResumeDrop(event)">
+            <input type="file" id="resume-file-inp" accept=".pdf,.txt,.docx" onchange="onResumeFile(event)">
+            <div class="drop-title">Upload your base resume</div>
+            <div class="drop-sub">PDF or TXT — stored locally in your browser</div>
+          </div>
+          <div class="notice" id="resume-upload-notice"></div>
+          <div class="spin" id="resume-upload-spin">
+            <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+            <span>Reading resume...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Generate summary -->
+      <div class="card">
+        <div class="card-title">Generate tailored summary</div>
+        <div class="form-g">
+          <label>Select a job from tracker</label>
+          <select id="rs-pick" onchange="prefillResume()" style="margin-bottom:10px"><option value="">— select a role —</option></select>
+        </div>
+        <div class="form-row">
+          <div class="form-g"><label>Company</label><input type="text" id="rs-co" placeholder="Company name"></div>
+          <div class="form-g"><label>Role</label><input type="text" id="rs-role" placeholder="Job title"></div>
+        </div>
+        <div class="form-g">
+          <label>Job description <span style="font-weight:400;color:var(--text3)">(auto-filled from tracker, or paste)</span></label>
+          <textarea id="rs-jd" rows="4" placeholder="Paste the job description for best results..."></textarea>
+        </div>
+        <div class="form-g">
+          <label>Summary style</label>
+          <select id="rs-style">
+            <option>Strategic finance leader — emphasize AI automation and operational transformation</option>
+            <option>Senior audit professional — emphasize KPMG, SOX, PCAOB, technical rigor</option>
+            <option>Advisory / consulting focus — emphasize cross-functional influence and business partnering</option>
+            <option>Fintech / SaaS specialist — emphasize scaling, metrics, and technology-forward finance</option>
+          </select>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-p" id="rs-btn" onclick="genResumeSummary()">Generate summary</button>
+        </div>
+        <div class="spin" id="rs-spin"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><span>Writing tailored summary...</span></div>
+      </div>
+      <div id="rs-out"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- PDF.js from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+// Set PDF.js worker
+if (typeof pdfjsLib !== 'undefined') {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+const BIO = `You are a career coach for Bianca Su, CPA. Her background:
+- Finance Manager at Kora Financial Inc. (fintech/consumer lending), Dec 2021–present
+- Staff Auditor KPMG LLP 2015–2017: SOX 404, PCAOB audits, government investigation work
+- Senior Accountant Westbon 2019–2021; Budget Analyst YooLi P2P Lending 2017–2018
+- Skills: AI automation, QBO/OAuth2 API, NetSuite, Oracle, Excel, SQL, Power BI, Alteryx
+- Expertise: US GAAP, multi-entity consolidation, SaaS metrics (ARR/MRR/CAC/churn), cash flow, investor reporting
+- Key achievement: cut month-end close from 15–20 days to under 3 days via AI + cloud API automation
+- MS Accounting, UIC; CPA licensed; Chicago IL
+- Goal: Finance Manager / Controller / Audit Director / Advisory with real decision-making authority`;
+
+const STATUSES = ['Interested','Applied','Phone screen','Interview','Offer','Rejected'];
+const st = { jobs: JSON.parse(localStorage.getItem('bj') || '[]') };
+function save() { localStorage.setItem('bj', JSON.stringify(st.jobs)); }
+
+// API Key
+const keyEl = document.getElementById('api-key');
+const savedK = localStorage.getItem('oai_key') || '';
+if (savedK) { keyEl.value = savedK; updateKeySt(); }
+function saveKey() { localStorage.setItem('oai_key', keyEl.value.trim()); updateKeySt(); }
+function updateKeySt() {
+  const k = keyEl.value.trim();
+  const el = document.getElementById('api-st');
+  if (k.startsWith('sk-')) { el.textContent = 'Key saved ✓'; el.className = 'api-st ok'; }
+  else if (k.length > 0) { el.textContent = 'Key saved ✓'; el.className = 'api-st ok'; }
+  else { el.textContent = 'Enter your key to enable AI'; el.className = 'api-st'; }
+}
+function getKey() { return localStorage.getItem('oai_key') || ''; }
+
+// Navigation
+function go(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('on'));
+  document.getElementById('page-' + id).classList.add('on');
+  el.classList.add('on');
+  if (id === 'cover' || id === 'prep') syncDropdowns();
+  if (id === 'resume') {
+    syncDropdowns();
+    // sync resume dropdown
+    const sel = document.getElementById('rs-pick');
+    sel.innerHTML = '<option value="">— select a role —</option>';
+    st.jobs.forEach((j,i) => { const o = document.createElement('option'); o.value = i; o.textContent = j.role + ' @ ' + j.co; sel.appendChild(o); });
+    loadStoredResume();
+  }
+}
+
+function syncDropdowns() {
+  ['cl-pick','pr-pick'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '<option value="">— select or fill in below —</option>';
+    st.jobs.forEach((j,i) => { const o = document.createElement('option'); o.value = i; o.textContent = j.role + ' @ ' + j.co; sel.appendChild(o); });
+  });
+}
+
+// Notices & spinners
+function notice(id, msg, type) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.className = 'notice' + (msg ? ' on ' + (type||'info') : '');
+}
+function spin(id, msg) { const el = document.getElementById(id); if(msg) el.querySelector('span').textContent = msg; el.classList.add('on'); }
+function unspin(id) { document.getElementById(id).classList.remove('on'); }
+
+// ── EXTRACT TEXT FROM PDF using PDF.js ──
+async function extractPDFText(arrayBuffer) {
+  if (typeof pdfjsLib === 'undefined') throw new Error('PDF.js not loaded');
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let text = '';
+  for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map(item => item.str).join(' ') + '\n';
+  }
+  return text.trim();
+}
+
+// ── OPENAI API CALL (text) ──
+async function callAI(userPrompt, forceJson = false) {
+  const key = getKey();
+  if (!key) throw new Error('No API key — please enter your OpenAI key in the sidebar.');
+  const body = {
+    model: 'gpt-4o',
+    max_tokens: 1500,
+    messages: [
+      { role: 'system', content: forceJson
+        ? 'You are a data extractor. Respond ONLY with valid JSON. No explanations, no markdown, no extra text whatsoever.'
+        : 'You are a career coach for Bianca Su, CPA.' },
+      { role: 'user', content: userPrompt }
+    ]
+  };
+  if (forceJson) body.response_format = { type: 'json_object' };
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    let msg = 'API error ' + res.status;
+    try { const e = await res.json(); msg = e.error?.message || msg; } catch(e) {}
+    throw new Error(msg);
+  }
+  const d = await res.json();
+  return d.choices?.[0]?.message?.content || '';
+}
+
+// ── OPENAI API CALL (image) ──
+async function callAIImage(base64, mime, textPrompt) {
+  const key = getKey();
+  if (!key) throw new Error('No API key — please enter your OpenAI key in the sidebar.');
+  const body = {
+    model: 'gpt-4o',
+    max_tokens: 1000,
+    response_format: { type: 'json_object' },
+    messages: [{
+      role: 'user',
+      content: [
+        { type: 'image_url', image_url: { url: 'data:' + mime + ';base64,' + base64 } },
+        { type: 'text', text: textPrompt }
+      ]
+    }]
+  };
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    let msg = 'API error ' + res.status;
+    try { const e = await res.json(); msg = e.error?.message || msg; } catch(e) {}
+    throw new Error(msg);
+  }
+  const d = await res.json();
+  return d.choices?.[0]?.message?.content || '';
+}
+
+// ── EXTRACT JOB FROM TEXT ──
+async function extractJob(text) {
+  const raw = await callAI(
+    'Extract job details from this text. Return JSON with keys: title, company, description (max 600 words).\n\nText:\n' + text.slice(0, 5000),
+    true
+  );
+  return JSON.parse(raw);
+}
+
+// ── FILE HANDLING ──
+function onDrop(e) { e.preventDefault(); e.currentTarget.classList.remove('drag'); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); }
+function onFileChange(e) { if (e.target.files[0]) handleFile(e.target.files[0]); }
+function clearFile() { document.getElementById('file-badge').classList.remove('on'); document.getElementById('file-inp').value = ''; notice('import-notice','',''); }
+
+async function handleFile(file) {
+  if (!getKey()) { notice('import-notice', 'Please enter your OpenAI API key in the sidebar first.', 'err'); return; }
+  document.getElementById('file-name').textContent = file.name;
+  document.getElementById('file-badge').classList.add('on');
+  notice('import-notice','','');
+
+  const isPDF = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+  const isImage = file.type.startsWith('image/');
+  const isText = file.type === 'text/plain' || file.name.endsWith('.txt');
+
+  try {
+    if (isPDF) {
+      spin('import-spin', 'Reading PDF text...');
+      const buf = await file.arrayBuffer();
+      const text = await extractPDFText(buf);
+      if (!text || text.length < 30) throw new Error('Could not extract text from PDF. Try uploading an image screenshot instead.');
+      spin('import-spin', 'Extracting job details...');
+      const parsed = await extractJob(text);
+      addJob(parsed.company || 'Unknown', parsed.title || 'Unknown', parsed.description || '');
+      notice('import-notice', 'Imported: ' + (parsed.title||'?') + ' @ ' + (parsed.company||'?'), 'ok');
+
+    } else if (isImage) {
+      spin('import-spin', 'Reading image...');
+      const b64 = await fileToBase64(file);
+      const raw = await callAIImage(b64, file.type,
+        'Extract job details from this job posting image. Return JSON with keys: title, company, description (max 600 words).'
+      );
+      const parsed = JSON.parse(raw);
+      addJob(parsed.company || 'Unknown', parsed.title || 'Unknown', parsed.description || '');
+      notice('import-notice', 'Imported: ' + (parsed.title||'?') + ' @ ' + (parsed.company||'?'), 'ok');
+
+    } else if (isText) {
+      spin('import-spin', 'Reading text...');
+      const text = await file.text();
+      const parsed = await extractJob(text);
+      addJob(parsed.company || 'Unknown', parsed.title || 'Unknown', parsed.description || '');
+      notice('import-notice', 'Imported: ' + (parsed.title||'?') + ' @ ' + (parsed.company||'?'), 'ok');
+
+    } else {
+      throw new Error('Unsupported file type. Please upload PDF, image, or TXT.');
+    }
+  } catch(e) {
+    notice('import-notice', 'Error: ' + e.message, 'err');
+  } finally {
+    unspin('import-spin');
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = ev => res(ev.target.result.split(',')[1]);
+    r.onerror = () => rej(new Error('File read failed'));
+    r.readAsDataURL(file);
+  });
+}
+
+// ── URL FETCH ──
+async function importURL() {
+  const url = document.getElementById('import-url').value.trim();
+  if (!url) { notice('import-notice', 'Please paste a URL first.', 'err'); return; }
+  if (!getKey()) { notice('import-notice', 'Please enter your OpenAI API key in the sidebar first.', 'err'); return; }
+  const btn = document.getElementById('url-btn');
+  btn.disabled = true;
+  notice('import-notice','','');
+  spin('import-spin', 'Fetching page...');
+
+  // Try multiple proxies in order
+  const proxies = [
+    'https://api.allorigins.win/get?url=' + encodeURIComponent(url),
+    'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url),
+  ];
+
+  let text = '';
+  for (const proxy of proxies) {
+    try {
+      const res = await fetch(proxy, { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) continue;
+      const contentType = res.headers.get('content-type') || '';
+      let raw = '';
+      if (contentType.includes('application/json')) {
+        const data = await res.json();
+        raw = data.contents || data.html || '';
+      } else {
+        raw = await res.text();
+      }
+      if (raw.length > 200) { 
+        const tmp = document.createElement('div');
+        tmp.innerHTML = raw;
+        tmp.querySelectorAll('script,style,nav,header,footer,noscript').forEach(el => el.remove());
+        text = (tmp.innerText || tmp.textContent || '').replace(/\s+/g,' ').trim();
+        if (text.length > 200) break;
+      }
+    } catch(e) { continue; }
+  }
+
+  try {
+    if (text.length < 100) {
+      throw new Error('This site blocks automated access. Please save the job as a PDF and upload it instead.');
+    }
+    spin('import-spin', 'Extracting job details...');
+    const parsed = await extractJob(text);
+    addJob(parsed.company || 'Unknown', parsed.title || 'Unknown', parsed.description || '', url);
+    notice('import-notice', 'Imported: ' + (parsed.title||'?') + ' @ ' + (parsed.company||'?'), 'ok');
+    document.getElementById('import-url').value = '';
+  } catch(e) {
+    notice('import-notice', e.message, 'err');
+  } finally {
+    btn.disabled = false;
+    unspin('import-spin');
+  }
+}
+
+// ── TRACKER ──
+function addJob(co, role, jd, url) {
+  const today = new Date().toISOString().split('T')[0];
+  st.jobs.unshift({ co, role, jd: jd||'', url: url||'', status: 'Interested', date: today });
+  save(); renderTracker(); syncDropdowns();
+}
+function addManual() {
+  const co = document.getElementById('m-co').value.trim();
+  const role = document.getElementById('m-role').value.trim();
+  if (!co || !role) { alert('Company and role are required.'); return; }
+  st.jobs.unshift({ co, role, jd:'', url:'', status: document.getElementById('m-status').value, date: document.getElementById('m-date').value || new Date().toISOString().split('T')[0] });
+  save(); renderTracker(); syncDropdowns();
+  document.getElementById('m-co').value = ''; document.getElementById('m-role').value = '';
+}
+function updateStatus(i, val) { st.jobs[i].status = val; save(); renderTracker(); }
+function removeJob(i) { if (confirm('Remove?')) { st.jobs.splice(i,1); save(); renderTracker(); syncDropdowns(); } }
+
+function renderTracker() {
+  const body = document.getElementById('t-body');
+  if (!st.jobs.length) {
+    body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:2rem;font-family:var(--mono);font-size:12px">No roles yet</td></tr>';
+    document.getElementById('stats-row').style.display = 'none'; return;
+  }
+  body.innerHTML = st.jobs.map((j,i) => `
+    <tr>
+      <td style="font-weight:500">${esc(j.co)}</td>
+      <td style="color:var(--text2)">${esc(j.role)}</td>
+      <td><select onchange="updateStatus(${i},this.value)" style="margin:0">
+        ${STATUSES.map(s=>`<option ${j.status===s?'selected':''}>${s}</option>`).join('')}
+      </select></td>
+      <td style="color:var(--text3);font-family:var(--mono);font-size:11px">${j.date||'—'}</td>
+      <td>${j.jd?`<span style="font-size:11px;padding:2px 8px;border-radius:99px;background:var(--accent-l);color:var(--accent);cursor:pointer" onclick="alert('${esc(j.role)} @ ${esc(j.co)}\\n\\n'+decodeURIComponent('${encodeURIComponent(j.jd.slice(0,500))}'))">view</span>`:'<span style="color:var(--text3);font-size:11px">—</span>'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm" onclick="jumpTo('cover',${i})">Cover ↗</button>
+        <button class="btn btn-sm" onclick="jumpTo('prep',${i})">Prep ↗</button>
+        <button class="btn btn-sm btn-danger" onclick="removeJob(${i})">✕</button>
+      </td>
+    </tr>`).join('');
+  const counts = {}; STATUSES.forEach(s=>counts[s]=0); st.jobs.forEach(j=>counts[j.status]=(counts[j.status]||0)+1);
+  const active = st.jobs.filter(j=>!['Rejected','Interested'].includes(j.status)).length;
+  const sr = document.getElementById('stats-row'); sr.style.display = 'grid';
+  sr.innerHTML = [['Total','var(--text)',st.jobs.length],['Active','#2B4B3C',active],['Interviews','#3B52A0',counts['Interview']],['Offers','#2B4B3C',counts['Offer']]].map(([l,c,n])=>
+    `<div class="stat"><div class="stat-n" style="color:${c}">${n}</div><div class="stat-l">${l}</div></div>`).join('');
+}
+
+function jumpTo(tab, idx) {
+  const navIdx = tab==='cover' ? 1 : tab==='prep' ? 2 : 3;
+  document.querySelectorAll('.nav-item')[navIdx].click();
+  setTimeout(() => {
+    const sel = document.getElementById(tab==='cover'?'cl-pick':'pr-pick');
+    if (sel) { sel.value = idx; prefill(tab==='cover'?'cl':'pr'); }
+  }, 60);
+}
+function prefill(p) {
+  const idx = document.getElementById(p+'-pick').value; if(idx==='') return;
+  const j = st.jobs[idx];
+  document.getElementById(p+'-co').value = j.co;
+  document.getElementById(p+'-role').value = j.role;
+  if (p==='cl' && j.jd) document.getElementById('cl-jd').value = j.jd;
+}
+
+// ── COVER LETTER ──
+async function genCL() {
+  const co=document.getElementById('cl-co').value.trim(), role=document.getElementById('cl-role').value.trim();
+  const jd=document.getElementById('cl-jd').value.trim(), tone=document.getElementById('cl-tone').value;
+  if (!co && !role && !jd) { alert('Please fill in company, role, or JD.'); return; }
+  const btn=document.getElementById('cl-btn'); btn.disabled=true;
+  spin('cl-spin'); document.getElementById('cl-out').innerHTML='';
+  try {
+    const text = await callAI(`${BIO}\n\nWrite a cover letter for: ${role||'this role'}${co?' at '+co:''}.\nEmphasis: ${tone}.\n${jd?'Job description:\n'+jd:''}\n\nInstructions:\n- 3 paragraphs, no address header\n- Para 1: strong specific hook for this role\n- Para 2: concrete evidence — AI automation cutting close from 15-20 days to under 3 days, KPMG SOX/PCAOB, fintech multi-entity consolidation, investor reporting\n- Para 3: forward-looking, why this role fits her goal of greater decision-making authority\n- Confident and direct — no clichés like "I am writing to express my interest"\n- Return letter text only`);
+    document.getElementById('cl-out').innerHTML = outCard('cl-body', `Cover letter${role?' — '+role:''}${co?' @ '+co:''}`, text);
+  } catch(e) { document.getElementById('cl-out').innerHTML=`<div class="out-card" style="color:var(--red)">${e.message}</div>`; }
+  finally { btn.disabled=false; unspin('cl-spin'); }
+}
+
+// ── INTERVIEW PREP ──
+async function genPrep() {
+  const co=document.getElementById('pr-co').value.trim(), role=document.getElementById('pr-role').value.trim();
+  const type=document.getElementById('pr-type').value;
+  const btn=document.getElementById('pr-btn'); btn.disabled=true;
+  spin('pr-spin'); document.getElementById('pr-out').innerHTML='';
+  try {
+    const text = await callAI(`${BIO}\n\nGenerate interview prep for: ${role||'Finance role'}${co?' at '+co:''}.\nType: ${type}\n\nUse Bianca's real background and achievements throughout. Be specific and actionable. Format with clear headers and numbered items.`);
+    document.getElementById('pr-out').innerHTML = outCard('pr-body', type.split('—')[0].trim()+(role?' — '+role:''), text);
+  } catch(e) { document.getElementById('pr-out').innerHTML=`<div class="out-card" style="color:var(--red)">${e.message}</div>`; }
+  finally { btn.disabled=false; unspin('pr-spin'); }
+}
+
+// ── HELPERS ──
+function outCard(id, title, text) {
+  return `<div class="out-card"><div class="out-head"><span class="out-title">${title}</span><button class="btn btn-sm" onclick="cp('${id}')">Copy</button></div><div id="${id}" class="out-body">${text}</div></div>`;
+}
+function cp(id) { navigator.clipboard.writeText(document.getElementById(id).innerText); event.target.textContent='Copied ✓'; setTimeout(()=>event.target.textContent='Copy',2000); }
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── RESUME STORAGE ──
+function loadStoredResume() {
+  const stored = localStorage.getItem('bianca_resume');
+  const name = localStorage.getItem('bianca_resume_name');
+  if (stored) {
+    document.getElementById('resume-stored-badge').style.display = 'block';
+    document.getElementById('resume-stored-name').textContent = name || 'Resume loaded';
+    document.getElementById('resume-drop-area').style.display = 'none';
+  } else {
+    document.getElementById('resume-stored-badge').style.display = 'none';
+    document.getElementById('resume-drop-area').style.display = 'block';
+  }
+}
+function clearResume() {
+  if (!confirm('Remove stored resume?')) return;
+  localStorage.removeItem('bianca_resume');
+  localStorage.removeItem('bianca_resume_name');
+  loadStoredResume();
+}
+
+function onResumeDrop(e) { e.preventDefault(); e.currentTarget.classList.remove('drag'); if (e.dataTransfer.files[0]) handleResumeFile(e.dataTransfer.files[0]); }
+function onResumeFile(e) { if (e.target.files[0]) handleResumeFile(e.target.files[0]); }
+
+async function handleResumeFile(file) {
+  if (!getKey()) { notice('resume-upload-notice', 'Please enter your OpenAI API key in the sidebar first.', 'err'); return; }
+  notice('resume-upload-notice', '', '');
+  spin('resume-upload-spin');
+
+  const isPDF = file.type === 'application/pdf' || file.name.endsWith('.pdf');
+  const isText = file.type === 'text/plain' || file.name.endsWith('.txt');
+
+  try {
+    let text = '';
+    if (isText) {
+      text = await file.text();
+    } else if (isPDF) {
+      const buf = await file.arrayBuffer();
+      text = await extractPDFText(buf);
+      if (!text || text.length < 50) throw new Error('Could not extract text from PDF. Try saving as TXT.');
+    } else {
+      throw new Error('Please upload a PDF or TXT file.');
+    }
+    localStorage.setItem('bianca_resume', text.slice(0, 8000));
+    localStorage.setItem('bianca_resume_name', file.name);
+    loadStoredResume();
+    notice('resume-upload-notice', 'Resume saved successfully.', 'ok');
+    setTimeout(() => notice('resume-upload-notice', '', ''), 3000);
+  } catch(e) {
+    notice('resume-upload-notice', 'Error: ' + e.message, 'err');
+  } finally {
+    unspin('resume-upload-spin');
+  }
+}
+
+function prefillResume() {
+  const idx = document.getElementById('rs-pick').value;
+  if (idx === '') return;
+  const j = st.jobs[idx];
+  document.getElementById('rs-co').value = j.co;
+  document.getElementById('rs-role').value = j.role;
+  if (j.jd) document.getElementById('rs-jd').value = j.jd;
+}
+
+async function genResumeSummary() {
+  const resumeText = localStorage.getItem('bianca_resume');
+  if (!resumeText) { alert('Please upload your base resume first.'); return; }
+  const co = document.getElementById('rs-co').value.trim();
+  const role = document.getElementById('rs-role').value.trim();
+  const jd = document.getElementById('rs-jd').value.trim();
+  const style = document.getElementById('rs-style').value;
+  if (!co && !role) { alert('Please select a role or enter a company and job title.'); return; }
+
+  const btn = document.getElementById('rs-btn');
+  btn.disabled = true;
+  spin('rs-spin');
+  document.getElementById('rs-out').innerHTML = '';
+
+  try {
+    const jdSection = jd ? 'JOB DESCRIPTION:\n' + jd.slice(0, 2000) : '';
+    const prompt = `You are a professional resume writer helping Bianca Su, CPA tailor her resume summary.
+
+BASE RESUME:
+${resumeText.slice(0, 4000)}
+
+TARGET ROLE: ${role || 'Finance role'}${co ? ' at ' + co : ''}
+${jdSection}
+
+STYLE: ${style}
+
+Write a tailored professional summary for Bianca's resume for this specific role.
+
+Requirements:
+- 3-5 sentences, punchy and specific
+- Start with her title/level and years of experience
+- Include her most relevant achievement for THIS role (e.g. for automation-heavy roles: cut close from 15-20 days to under 3 days; for audit roles: KPMG SOX/PCAOB)
+- Use keywords from the job description naturally
+- End with what she brings to this specific role / company type
+- Do NOT use generic phrases like "results-driven" or "dynamic professional"
+- Return the summary text only, no heading or label`;
+
+    const text = await callAI(prompt);
+    document.getElementById('rs-out').innerHTML = `
+      <div class="out-card">
+        <div class="out-head">
+          <span class="out-title">Tailored summary — ${role || 'role'}${co ? ' @ ' + co : ''}</span>
+          <button class="btn btn-sm" onclick="cp('rs-body')">Copy</button>
+        </div>
+        <div id="rs-body" class="out-body" style="font-size:15px;line-height:1.9;background:var(--accent-l);padding:16px;border-radius:6px;color:var(--text)">${text}</div>
+        <div style="margin-top:12px;font-size:12px;color:var(--text3)">Paste this into the summary section of your resume for this application.</div>
+      </div>`;
+  } catch(e) {
+    document.getElementById('rs-out').innerHTML = `<div class="out-card" style="color:var(--red)">${e.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    unspin('rs-spin');
+  }
+}
+
+// Init
+document.getElementById('m-date').valueAsDate = new Date();
+renderTracker();
+loadStoredResume();
+</script>
+</body>
+</html>
